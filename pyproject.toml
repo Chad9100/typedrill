@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "typedrill"
+version = "0.1.0"
+description = "A terminal typing trainer with live WPM, per-key error tracking and weak-key drills."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Chad Mowlavie" }]
+requires-python = ">=3.10"
+keywords = ["typing", "trainer", "wpm", "terminal", "curses"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console :: Curses",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "windows-curses; sys_platform == \"win32\"",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[project.scripts]
+typedrill = "typedrill.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Chad9100/typedrill"
+Issues = "https://github.com/Chad9100/typedrill/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
