@@ -1,0 +1,246 @@
+import json
+from datetime import datetime, timezone
+
+import pytest
+
+from typedrill import storage
+from typedrill.cli import DEFAULT_WORDS, build_parser, main
+from typedrill.tui import ABORTED, FINISHED
+
+NOW = datetime(2026, 5, 6, 7, 8, 9, tzinfo=timezone.utc)
+
+
+class Clock:
+    t = 0.0
+
+    def __call__(self):
+        return self.t
+
+
+def typist(mistakes=0, seconds=30.0, clock=None):
+    """A stand-in runner that types the target, botching the first few characters."""
+    seen = {}
+
+    def run(session, mode):
+        seen["session"], seen["mode"] = session, mode
+        text = session.target
+        for i, ch in enumerate(text):
+            session.type_char("#" if i < mistakes else ch)
+            if i == 0 and clock:
+                clock.t += seconds
+            if session.finished:
+                break
+        return FINISHED
+
+    run.seen = seen
+    return run
+
+
+def run_cli(argv, tmp_path, runner=None, clock=None):
+    env = {"TYPEDRILL_HOME": str(tmp_path)}
+    return main(argv, env=env, runner=runner, now=NOW, clock=clock)
+
+
+def history(tmp_path):
+    return storage.load_history(tmp_path / "history.json")
+
+
+def test_default_drill_is_25_words(tmp_path, capsys):
+    run = typist()
+    assert run_cli(["--seed", "1"], tmp_path, run) == 0
+    assert len(run.seen["session"].target.split()) == DEFAULT_WORDS
+    assert run.seen["mode"] == "words"
+    assert "words:" in capsys.readouterr().out
+
+
+def test_words_option(tmp_path):
+    run = typist()
+    run_cli(["--words", "7"], tmp_path, run)
+    assert len(run.seen["session"].target.split()) == 7
+
+
+def test_time_option_sets_limit(tmp_path):
+    run = typist()
+    run_cli(["--time", "45"], tmp_path, run)
+    assert run.seen["session"].limit == 45.0
+    assert run.seen["mode"] == "time"
+
+
+def test_time_and_words_conflict(tmp_path):
+    with pytest.raises(SystemExit):
+        run_cli(["--time", "5", "--words", "5"], tmp_path)
+
+
+@pytest.mark.parametrize("bad", ["0", "-3", "abc"])
+def test_bad_numbers_rejected(bad, tmp_path):
+    with pytest.raises(SystemExit):
+        run_cli(["--words", bad], tmp_path)
+
+
+def test_seed_makes_drill_repeatable(tmp_path):
+    a, b = typist(), typist()
+    run_cli(["--seed", "9", "--no-save"], tmp_path, a)
+    run_cli(["--seed", "9", "--no-save"], tmp_path, b)
+    assert a.seen["session"].target == b.seen["session"].target
+
+
+def test_result_saved_to_history(tmp_path):
+    run_cli(["--seed", "1", "--words", "3"], tmp_path, typist())
+    (rec,) = history(tmp_path)
+    assert rec["mode"] == "words" and rec["ts"] == "2026-05-06T07:08:09Z"
+    assert rec["accuracy"] == 100.0
+
+
+def test_no_save_flag(tmp_path):
+    run_cli(["--no-save", "--words", "3"], tmp_path, typist())
+    assert not (tmp_path / "history.json").exists()
+
+
+def test_mistakes_recorded_per_key(tmp_path):
+    run_cli(["--words", "3", "--seed", "1"], tmp_path, typist(mistakes=2))
+    (rec,) = history(tmp_path)
+    assert rec["errors"] == 2
+    assert sum(e for _, e in rec["keys"].values()) == 2
+
+
+def test_aborted_drill_not_saved(tmp_path, capsys):
+    assert run_cli([], tmp_path, lambda s, m: ABORTED) == 0
+    assert "not saved" in capsys.readouterr().out
+    assert not (tmp_path / "history.json").exists()
+
+
+def test_ctrl_c_counts_as_abort(tmp_path):
+    def boom(session, mode):
+        raise KeyboardInterrupt
+
+    assert run_cli([], tmp_path, boom) == 0
+    assert history(tmp_path) == []
+
+
+def test_text_file_drill(tmp_path):
+    f = tmp_path / "t.txt"
+    f.write_text("The quick\nbrown fox\n", encoding="utf-8")
+    run = typist()
+    run_cli(["--text", str(f), "--no-save"], tmp_path, run)
+    assert run.seen["session"].target == "The quick brown fox"
+    assert run.seen["mode"] == "text"
+
+
+def test_text_file_with_word_limit(tmp_path):
+    f = tmp_path / "t.txt"
+    f.write_text("one two three four", encoding="utf-8")
+    run = typist()
+    run_cli(["--text", str(f), "--words", "2", "--no-save"], tmp_path, run)
+    assert run.seen["session"].target == "one two"
+
+
+def test_text_file_with_time_cycles(tmp_path):
+    f = tmp_path / "t.txt"
+    f.write_text("ab cd", encoding="utf-8")
+    run = typist()
+    run_cli(["--text", str(f), "--time", "10", "--no-save"], tmp_path, run)
+    assert run.seen["session"].limit == 10.0
+    assert run.seen["session"].extend is not None
+    assert run.seen["session"].target.startswith("ab cd ab cd")
+
+
+def test_text_file_missing(tmp_path, capsys):
+    assert run_cli(["--text", str(tmp_path / "nope.txt")], tmp_path, typist()) == 1
+    assert "cannot read" in capsys.readouterr().err
+
+
+def test_text_file_blank(tmp_path, capsys):
+    f = tmp_path / "t.txt"
+    f.write_text("  \n \n", encoding="utf-8")
+    assert run_cli(["--text", str(f)], tmp_path, typist()) == 1
+    assert "no typeable text" in capsys.readouterr().err
+
+
+def test_text_file_with_bom(tmp_path):
+    f = tmp_path / "t.txt"
+    f.write_bytes(b"\xef\xbb\xbfhello world")
+    run = typist()
+    run_cli(["--text", str(f), "--no-save"], tmp_path, run)
+    assert run.seen["session"].target == "hello world"
+
+
+def test_stats_empty(tmp_path, capsys):
+    assert run_cli(["stats"], tmp_path) == 0
+    assert "No drills" in capsys.readouterr().out
+
+
+def test_stats_after_drills(tmp_path, capsys):
+    run_cli(["--words", "3", "--seed", "1"], tmp_path, typist())
+    run_cli(["--words", "3", "--seed", "2"], tmp_path, typist())
+    capsys.readouterr()
+    run_cli(["stats"], tmp_path)
+    assert "Sessions:        2" in capsys.readouterr().out
+
+
+def test_weak_keys_report_from_history(tmp_path, capsys):
+    rec = {"ts": "2026-01-01T00:00:00Z", "mode": "words", "seconds": 30, "wpm": 40,
+           "accuracy": 90, "errors": 9, "chars": 100, "keys": {"q": [10, 9], "e": [50, 1]}}
+    (tmp_path / "history.json").write_text(json.dumps([rec]), encoding="utf-8")
+    run_cli(["weak-keys"], tmp_path)
+    out = capsys.readouterr().out
+    assert out.index("\n  q ") < out.index("\n  e ") and "90.0%" in out
+
+
+def test_weak_keys_empty(tmp_path, capsys):
+    run_cli(["weak-keys"], tmp_path)
+    assert "No weak keys" in capsys.readouterr().out
+
+
+def test_weak_keys_limit_and_last(tmp_path, capsys):
+    old = {"wpm": 1, "accuracy": 1, "keys": {"z": [10, 10]}}
+    new = {"wpm": 1, "accuracy": 1, "keys": {"a": [10, 5], "b": [10, 4]}}
+    (tmp_path / "history.json").write_text(json.dumps([old, new]), encoding="utf-8")
+    run_cli(["weak-keys", "--last", "1", "--limit", "1"], tmp_path)
+    out = capsys.readouterr().out
+    assert " a " in out and " b " not in out and " z " not in out
+
+
+def test_weak_drill_uses_history(tmp_path):
+    rec = {"wpm": 1, "accuracy": 1, "keys": {"z": [10, 5]}}
+    (tmp_path / "history.json").write_text(json.dumps([rec]), encoding="utf-8")
+    run = typist()
+    run_cli(["--weak", "--seed", "1", "--no-save"], tmp_path, run)
+    assert run.seen["mode"] == "weak"
+    assert all("z" in w for w in run.seen["session"].target.split())
+
+
+def test_weak_drill_without_history(tmp_path, capsys):
+    assert run_cli(["--weak"], tmp_path, typist()) == 1
+    assert "no weak keys" in capsys.readouterr().err
+
+
+def test_weak_time_drill_extends_with_weak_words(tmp_path):
+    rec = {"wpm": 1, "accuracy": 1, "keys": {"z": [10, 5]}}
+    (tmp_path / "history.json").write_text(json.dumps([rec]), encoding="utf-8")
+    run = typist()
+    run_cli(["--weak", "--time", "5", "--no-save"], tmp_path, run)
+    session = run.seen["session"]
+    assert all("z" in w for w in session.extend().split())
+
+
+def test_non_interactive_terminal_refused(tmp_path, capsys, monkeypatch):
+    import io
+
+    monkeypatch.setattr("sys.stdin", io.StringIO())  # never a tty
+    assert run_cli([], tmp_path) == 1
+    assert "interactive terminal" in capsys.readouterr().err
+
+
+def test_save_failure_is_reported_not_fatal(tmp_path, capsys):
+    blocker = tmp_path / "file"
+    blocker.write_text("x")
+    code = main(["--words", "2"], env={"TYPEDRILL_HOME": str(blocker / "sub")},
+                runner=typist(), now=NOW)
+    assert code == 0
+    assert "could not save" in capsys.readouterr().err
+
+
+def test_version(capsys):
+    with pytest.raises(SystemExit):
+        build_parser().parse_args(["--version"])
+    assert "typedrill" in capsys.readouterr().out
