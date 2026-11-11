@@ -83,6 +83,16 @@ def save_history(records: list[dict[str, Any]], path: Path | None = None) -> Non
     os.replace(tmp, path)
 
 
+def clear_history(path: Path | None = None) -> bool:
+    """Delete the history file. True if there was one to delete."""
+    path = path or history_path()
+    try:
+        path.unlink()
+    except (FileNotFoundError, NotADirectoryError):
+        return False
+    return True
+
+
 def add_record(record: dict[str, Any], path: Path | None = None) -> None:
     records = load_history(path)
     records.append(record)

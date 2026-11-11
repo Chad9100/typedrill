@@ -55,7 +55,31 @@ def build_parser() -> argparse.ArgumentParser:
     fmt.add_argument("--csv", action="store_true", help="CSV format (the default)")
     fmt.add_argument("--json", action="store_true", help="JSON format, including per-key counts")
     ex.add_argument("-o", "--output", metavar="FILE", help="write to FILE instead of standard output")
+    rs = sub.add_parser("reset", help="delete all saved history (asks first)")
+    rs.add_argument("-y", "--yes", action="store_true", help="do not ask for confirmation")
     return p
+
+
+def _reset(path: Path, assume_yes: bool) -> int:
+    count = len(storage.load_history(path))
+    if count == 0:
+        print("No history to delete.")
+        return 0
+    if not assume_yes:
+        try:
+            answer = input(f"Delete {count} saved drill(s)? This cannot be undone. [y/N] ")
+        except EOFError:
+            answer = ""
+        if answer.strip().lower() not in ("y", "yes"):
+            print("Nothing deleted.")
+            return 1
+    try:
+        storage.clear_history(path)
+    except OSError as exc:
+        print(f"typedrill: cannot delete history: {exc.strerror or exc}", file=sys.stderr)
+        return 1
+    print(f"Deleted {count} saved drill(s).")
+    return 0
 
 
 def build_session(
@@ -116,6 +140,8 @@ def main(
     if args.command == "stats":
         print(format_stats(storage.load_history(hist_path)))
         return 0
+    if args.command == "reset":
+        return _reset(hist_path, args.yes)
     if args.command == "export":
         fmt = format_json if args.json else format_csv
         text = fmt(storage.load_history(hist_path))

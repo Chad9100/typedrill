@@ -26,6 +26,7 @@ typedrill stats               # history summary
 typedrill weak-keys           # keys ranked by error rate
 typedrill export --csv        # history as CSV on stdout (or -o FILE)
 typedrill export --json       # history as JSON, with per-key counts
+typedrill reset               # delete all history, after confirmation (-y skips it)
 ```
 
 In the drill: type the text shown. Correct characters turn green, mistakes
@@ -112,6 +113,29 @@ In the JSON, each key maps to `[attempts, errors]`. `export --csv` leaves out
 the per-key counts. Both use LF line endings.
 
 The error message text after the colon comes from the operating system.
+
+### Deleting history
+
+`typedrill reset` deletes the history file after a `[y/N]` question (only `y`
+or `yes` confirms; anything else, or a closed stdin, cancels with exit code 1).
+`-y` skips the question. Real output, with piped answers (so the typed answer
+is not echoed and the reply follows the prompt on the same line):
+
+```
+$ echo n | typedrill reset
+Delete 3 saved drill(s)? This cannot be undone. [y/N] Nothing deleted.
+exit=1
+$ echo y | typedrill reset
+Delete 3 saved drill(s)? This cannot be undone. [y/N] Deleted 3 saved drill(s).
+exit=0
+$ typedrill reset
+No history to delete.
+exit=0
+```
+
+Only `history.json` is removed (a `history.json.bad` set aside after
+corruption is left alone). The prompt was exercised with piped input and in
+tests, not typed at an interactive console.
 
 ## What was and was not tested
 

@@ -245,6 +245,59 @@ def seed_history(tmp_path):
     run_cli(["--words", "3"], tmp_path, typist(mistakes=2))
 
 
+def test_reset_confirmed_deletes_history(tmp_path, capsys, monkeypatch):
+    seed_history(tmp_path)
+    capsys.readouterr()
+    monkeypatch.setattr("builtins.input", lambda prompt="": "y")
+    assert run_cli(["reset"], tmp_path) == 0
+    assert "Deleted 2 saved drill(s)." in capsys.readouterr().out
+    assert not (tmp_path / "history.json").exists()
+
+
+@pytest.mark.parametrize("answer", ["", "n", "no", "maybe"])
+def test_reset_declined_keeps_history(answer, tmp_path, capsys, monkeypatch):
+    seed_history(tmp_path)
+    capsys.readouterr()
+    monkeypatch.setattr("builtins.input", lambda prompt="": answer)
+    assert run_cli(["reset"], tmp_path) == 1
+    assert "Nothing deleted." in capsys.readouterr().out
+    assert len(history(tmp_path)) == 2
+
+
+def test_reset_eof_counts_as_no(tmp_path, monkeypatch):
+    seed_history(tmp_path)
+
+    def eof(prompt=""):
+        raise EOFError
+
+    monkeypatch.setattr("builtins.input", eof)
+    assert run_cli(["reset"], tmp_path) == 1
+    assert len(history(tmp_path)) == 2
+
+
+def test_reset_yes_skips_prompt(tmp_path, monkeypatch):
+    seed_history(tmp_path)
+
+    def fail(prompt=""):
+        raise AssertionError("should not prompt")
+
+    monkeypatch.setattr("builtins.input", fail)
+    assert run_cli(["reset", "--yes"], tmp_path) == 0
+    assert history(tmp_path) == []
+
+
+def test_reset_with_no_history(tmp_path, capsys):
+    assert run_cli(["reset", "-y"], tmp_path) == 0
+    assert "No history to delete." in capsys.readouterr().out
+
+
+def test_reset_under_a_file_is_empty_history(tmp_path, capsys):
+    blocker = tmp_path / "f"
+    blocker.write_text("x")
+    assert main(["reset"], env={"TYPEDRILL_HOME": str(blocker / "sub")}) == 0
+    assert "No history to delete." in capsys.readouterr().out
+
+
 def test_export_stdout_csv(tmp_path, capsys):
     seed_history(tmp_path)
     capsys.readouterr()
