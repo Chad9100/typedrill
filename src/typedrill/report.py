@@ -47,7 +47,42 @@ def format_stats(history: list[dict[str, Any]], recent: int = 5) -> str:
     return "\n".join(lines)
 
 
-CSV_COLUMNS = ["ts", "mode", "seconds", "wpm", "accuracy", "errors", "chars"]
+SPARK_LEVELS = "_.-=+*#@"  # ASCII only, so any console code page can show it
+
+
+def sparkline(values: list[float]) -> str:
+    """One character per value, scaled between the minimum and maximum."""
+    if not values:
+        return ""
+    lo, hi = min(values), max(values)
+    if hi == lo:
+        return SPARK_LEVELS[len(SPARK_LEVELS) // 2] * len(values)
+    top = len(SPARK_LEVELS) - 1
+    return "".join(SPARK_LEVELS[round((v - lo) / (hi - lo) * top)] for v in values)
+
+
+def format_chart(history: list[dict[str, Any]], width: int = 60) -> str:
+    """Text sparklines of WPM and accuracy over the last ``width`` sessions."""
+    if not history:
+        return "No drills recorded yet. Run `typedrill` to start one."
+    recent = history[-width:]
+    wpms = [float(r["wpm"]) for r in recent]
+    accs = [float(r["accuracy"]) for r in recent]
+    first, last = wpms[0], wpms[-1]
+    lines = [
+        f"WPM over the last {len(recent)} session(s), oldest to newest:",
+        f"  {sparkline(wpms)}",
+        f"  low {min(wpms):.1f}  high {max(wpms):.1f}  first {first:.1f}  latest {last:.1f}  "
+        f"change {last - first:+.1f}",
+        "",
+        "Accuracy:",
+        f"  {sparkline(accs)}",
+        f"  low {min(accs):.1f}%  high {max(accs):.1f}%",
+    ]
+    return "\n".join(lines)
+
+
+CSV_COLUMNS =["ts", "mode", "seconds", "wpm", "accuracy", "errors", "chars"]
 
 
 def format_csv(history: list[dict[str, Any]]) -> str:

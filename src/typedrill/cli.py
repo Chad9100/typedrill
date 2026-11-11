@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any, Callable, Mapping
 
 from typedrill import __version__, storage, weak, words
-from typedrill.report import format_csv, format_json, format_stats, format_summary, format_weak_keys
+from typedrill.report import format_chart, format_csv, format_json, format_stats, format_summary, format_weak_keys
 from typedrill.session import DrillSession
 from typedrill.tui import ABORTED
 
@@ -46,7 +46,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--seed", type=int, help="seed the random word choice (repeatable drills)")
     p.add_argument("--no-save", action="store_true", help="do not record this drill in history")
     sub = p.add_subparsers(dest="command")
-    sub.add_parser("stats", help="show history summary")
+    st = sub.add_parser("stats", help="show history summary")
+    st.add_argument("--chart", action="store_true", help="show WPM and accuracy trend sparklines")
     wk = sub.add_parser("weak-keys", help="show the keys you miss most")
     wk.add_argument("--limit", type=_positive, default=8, help="how many keys to list (default 8)")
     wk.add_argument("--last", type=_positive, help="only look at the last N sessions")
@@ -138,7 +139,8 @@ def main(
     hist_path = storage.history_path(env)
 
     if args.command == "stats":
-        print(format_stats(storage.load_history(hist_path)))
+        history = storage.load_history(hist_path)
+        print(format_chart(history) if args.chart else format_stats(history))
         return 0
     if args.command == "reset":
         return _reset(hist_path, args.yes)

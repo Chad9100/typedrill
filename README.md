@@ -23,6 +23,7 @@ typedrill --time 60           # as many words as you can in 60 seconds
 typedrill --text notes.txt    # type your own text (whole file, or --words N of it)
 typedrill --weak              # a drill built from your weak keys
 typedrill stats               # history summary
+typedrill stats --chart       # WPM and accuracy trend as text sparklines
 typedrill weak-keys           # keys ranked by error rate
 typedrill export --csv        # history as CSV on stdout (or -o FILE)
 typedrill export --json       # history as JSON, with per-key counts
@@ -74,6 +75,15 @@ Last 5 sessions:
   2026-11-04 18:00:00   words   43.3  97.5%
   2026-11-05 18:00:00   words   46.9  95.1%
   2026-11-06 18:00:00   words   52.4  98.7%
+
+$ typedrill stats --chart   (14 simulated sessions; ASCII only, "_" lowest to "@" highest)
+WPM over the last 14 session(s), oldest to newest:
+  __.__.==++*##@
+  low 29.0  high 48.4  first 29.4  latest 48.4  change +19.0
+
+Accuracy:
+  +*_@-++.@#_*_+
+  low 93.2%  high 98.2%
 
 $ typedrill weak-keys
 Weak keys (worst first):

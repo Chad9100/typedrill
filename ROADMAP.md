@@ -11,8 +11,8 @@ Ideas for after v0.1, roughly in order of usefulness.
 4. **Punctuation and numbers modes** - optional capitals, punctuation and
    digits in generated text.
 5. **More word lists** - bundled lists by difficulty, plus `--wordlist FILE`.
-6. **Progress charts** - `typedrill stats --chart` with a text sparkline of WPM
-   over time.
+6. ~~**Progress charts** - `typedrill stats --chart` with a text sparkline of WPM
+   over time.~~ Done.
 7. **Quote and code modes** - type short quotes or source snippets, with
    indentation handled sensibly.
 8. **Stop-on-error mode** - optional strict mode where a wrong key blocks until

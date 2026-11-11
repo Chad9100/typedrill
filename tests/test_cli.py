@@ -361,6 +361,35 @@ def test_export_csv_and_json_conflict(tmp_path):
         run_cli(["export", "--csv", "--json"], tmp_path)
 
 
+def test_stats_chart_empty(tmp_path, capsys):
+    assert run_cli(["stats", "--chart"], tmp_path) == 0
+    assert "No drills recorded yet" in capsys.readouterr().out
+
+
+def test_stats_chart_rising(tmp_path, capsys):
+    recs = [{"wpm": w, "accuracy": 95.0, "keys": {}} for w in (20, 30, 40, 50)]
+    storage.save_history(recs, tmp_path / "history.json")
+    assert run_cli(["stats", "--chart"], tmp_path) == 0
+    out = capsys.readouterr().out
+    assert "last 4 session(s)" in out
+    assert "low 20.0  high 50.0  first 20.0  latest 50.0  change +30.0" in out
+    line = out.splitlines()[1].strip()
+    assert line[0] == "_" and line[-1] == "@" and len(line) == 4
+    assert list(line) == sorted(line, key="_.-=+*#@".index)
+
+
+def test_chart_flat_and_width():
+    from typedrill.report import format_chart, sparkline
+
+    assert sparkline([5, 5, 5]) == "+++"
+    assert sparkline([]) == ""
+    recs = [{"wpm": float(i), "accuracy": 90.0} for i in range(100)]
+    lines = format_chart(recs, width=10).splitlines()
+    assert len(lines[1].strip()) == 10
+    assert "last 10 session(s)" in lines[0]
+    assert "first 90.0  latest 99.0" in lines[2]
+
+
 def test_version(capsys):
     with pytest.raises(SystemExit):
         build_parser().parse_args(["--version"])
