@@ -76,3 +76,9 @@ def test_no_tmp_file_left(tmp_path):
     path = tmp_path / "history.json"
     storage.add_record(storage.make_record(result(), "words"), path)
     assert [p.name for p in tmp_path.iterdir()] == ["history.json"]
+
+
+def test_load_history_when_parent_is_a_file(tmp_path):
+    blocker = tmp_path / "file"
+    blocker.write_text("x")
+    assert storage.load_history(blocker / "sub" / "history.json") == []

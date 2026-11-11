@@ -58,7 +58,8 @@ def load_history(path: Path | None = None) -> list[dict[str, Any]]:
     path = path or history_path()
     try:
         raw = path.read_text(encoding="utf-8-sig")
-    except FileNotFoundError:
+    except (FileNotFoundError, NotADirectoryError):
+        # NotADirectoryError: a parent of the path is a file (seen on Linux).
         return []
     try:
         data = json.loads(raw)
