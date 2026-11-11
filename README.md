@@ -1,0 +1,127 @@
+# typedrill
+
+A terminal typing trainer. It shows live WPM and accuracy while you type,
+highlights every mistyped character, remembers your history, and turns the
+keys you miss most into targeted drills. Python 3.10+, standard library only.
+
+On Windows the `windows-curses` package is installed automatically (it is an
+environment-marked dependency in `pyproject.toml`); Linux and macOS use the
+curses that ships with Python.
+
+## Install
+
+```
+pip install -e .
+```
+
+## Usage
+
+```
+typedrill                     # 25 random words
+typedrill --words 50          # 50 random words
+typedrill --time 60           # as many words as you can in 60 seconds
+typedrill --text notes.txt    # type your own text (whole file, or --words N of it)
+typedrill --weak              # a drill built from your weak keys
+typedrill stats               # history summary
+typedrill weak-keys           # keys ranked by error rate
+```
+
+In the drill: type the text shown. Correct characters turn green, mistakes
+turn red (a mistyped space shows as `_`), `Backspace` fixes a typo, `Esc`
+quits. The clock starts on your first keystroke. A correction fixes the text
+but the miss still counts against accuracy and against the key you got wrong.
+Only finished drills are saved; use `--no-save` to skip saving.
+
+Scoring: WPM = correct characters / 5 / minutes. Accuracy = correct keystrokes
+/ all keystrokes. Errors are charged to the key you *should* have hit, which is
+what `weak-keys` aggregates (keys tried fewer than 5 times are ignored).
+
+History is a JSON file, `history.json`, in `~/.typedrill`, or in the directory
+named by the `TYPEDRILL_HOME` environment variable. If the file is ever
+unreadable it is moved to `history.json.bad` rather than overwritten.
+
+## Real output
+
+The non-interactive commands below were captured from the installed
+`typedrill` command. The history shown was seeded through the library API by a
+script that simulates a typist, because a full-screen drill cannot be driven
+from a script; so the numbers are demo data, not a human's typing.
+
+```
+$ typedrill stats   (empty history)
+No drills recorded yet. Run `typedrill` to start one.
+
+$ typedrill --weak   (empty history)
+typedrill: no weak keys in your history yet; do a few drills first
+
+$ typedrill < /dev/null   (not a terminal)
+typedrill: the drill needs an interactive terminal (try `typedrill stats` or `typedrill weak-keys`)
+
+$ typedrill stats
+Sessions:        6
+Time practised:  3.9 min
+Best WPM:        52.4
+Average WPM:     47.0 (last 10: 47.0)
+Average accuracy: 97.1%
+
+Last 5 sessions:
+  when                  mode    wpm   acc
+  2026-11-02 18:00:00   words   48.4  95.4%
+  2026-11-03 18:00:00   words   47.7  98.7%
+  2026-11-04 18:00:00   words   43.3  97.5%
+  2026-11-05 18:00:00   words   46.9  95.1%
+  2026-11-06 18:00:00   words   52.4  98.7%
+
+$ typedrill weak-keys
+Weak keys (worst first):
+  key     errors  attempts  error rate
+  p            2         7       28.6%
+  h            5        43       11.6%
+  k            1        10       10.0%
+  y            1        20        5.0%
+  g            1        21        4.8%
+  t            3        77        3.9%
+  w            1        27        3.7%
+  o            2        65        3.1%
+
+Drill them with: typedrill --weak
+```
+
+## What was and was not tested
+
+The full-screen UI has only been tested with a fake screen and a stand-in
+curses module (see `tests/test_tui.py`); it has not been run in a real
+terminal. This is the fake-screen render after typing
+`the quick brwwn fox jum` (text only, colours are not captured by the fake):
+
+```
+typedrill    9.0s    29.3 wpm    95.7% acc
+
+  the quick brown fox jumps over the lazy dog
+  and keeps running far away
+
+
+
+
+
+Esc: quit   Backspace: correct a typo
+```
+
+Scoring, the session state machine, storage, weak-key analysis and the CLI
+are plain Python with an injected clock and are covered by the test suite
+(`pytest`).
+
+## Layout
+
+- `scoring.py` - WPM, accuracy, per-key counts (pure)
+- `session.py` - drill state machine, injected clock, UI-independent
+- `words.py` - built-in word list, text cleaning, drill generation
+- `storage.py` - history JSON in the data dir
+- `weak.py` - weak-key ranking and weak-key drills
+- `report.py` - text for `stats` / `weak-keys`
+- `tui.py` - the curses layer (wrapping, drawing, key loop)
+- `cli.py` - argument parsing and wiring
+
+## License
+
+MIT
