@@ -47,6 +47,13 @@ def test_text_words_limit():
     assert text_words("one two three four") == "one two three four"
 
 
+def test_parse_wordlist_dedupes_and_cleans():
+    from typedrill.words import parse_wordlist
+
+    assert parse_wordlist("cat dog\ncat  “bird”\n\n") == ["cat", "dog", '"bird"']
+    assert parse_wordlist("  \n") == []
+
+
 def test_cycle_text_repeats():
     assert cycle_text("a b", 5) == "a b a b a"
     assert cycle_text("   ", 5) == ""

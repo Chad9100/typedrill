@@ -43,6 +43,14 @@ def clean_text(raw: str) -> str:
     return " ".join(folded.split())
 
 
+def parse_wordlist(raw: str) -> list[str]:
+    """Words from a word-list file: whitespace separated, cleaned, de-duplicated, order kept."""
+    seen: dict[str, None] = {}
+    for word in clean_text(raw).split():
+        seen.setdefault(word, None)
+    return list(seen)
+
+
 def generate(count: int, rng: random.Random | None = None, pool: list[str] | None = None) -> str:
     """``count`` random words joined by spaces, never repeating one twice in a row."""
     rng = rng or random.Random()

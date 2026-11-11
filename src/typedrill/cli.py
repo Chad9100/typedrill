@@ -42,6 +42,8 @@ def build_parser() -> argparse.ArgumentParser:
     mode.add_argument("--words", type=_positive, metavar="N",
                       help=f"drill N words (default {DEFAULT_WORDS})")
     p.add_argument("--text", metavar="FILE", help="type the contents of FILE instead of random words")
+    p.add_argument("--wordlist", metavar="FILE",
+                   help="draw random words from FILE (whitespace separated) instead of the built-in list")
     p.add_argument("--weak", action="store_true", help="drill your weak keys from history")
     p.add_argument("--seed", type=int, help="seed the random word choice (repeatable drills)")
     p.add_argument("--no-save", action="store_true", help="do not record this drill in history")
@@ -93,6 +95,17 @@ def build_session(
     pool: list[str] | None = None
     label = "time" if limit else "words"
     source: str | None = None
+
+    if args.wordlist and (args.text or args.weak):
+        raise ValueError("--wordlist cannot be combined with --text or --weak")
+    if args.wordlist:
+        try:
+            raw = Path(args.wordlist).read_text(encoding="utf-8-sig", errors="replace")
+        except OSError as exc:
+            raise ValueError(f"cannot read {args.wordlist}: {exc.strerror or exc}") from None
+        pool = words.parse_wordlist(raw)
+        if not pool:
+            raise ValueError(f"{args.wordlist} has no typeable words")
 
     if args.text:
         try:

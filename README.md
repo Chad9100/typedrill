@@ -21,6 +21,7 @@ typedrill                     # 25 random words
 typedrill --words 50          # 50 random words
 typedrill --time 60           # as many words as you can in 60 seconds
 typedrill --text notes.txt    # type your own text (whole file, or --words N of it)
+typedrill --wordlist my.txt   # random words drawn from your own list
 typedrill --weak              # a drill built from your weak keys
 typedrill stats               # history summary
 typedrill stats --chart       # WPM and accuracy trend as text sparklines
@@ -146,6 +147,24 @@ exit=0
 Only `history.json` is removed (a `history.json.bad` set aside after
 corruption is left alone). The prompt was exercised with piped input and in
 tests, not typed at an interactive console.
+
+### Custom word lists
+
+`--wordlist FILE` replaces the built-in words with the whitespace-separated
+words in FILE (cleaned to ASCII, duplicates dropped). It cannot be combined
+with `--text` or `--weak`. Real error output (a piped run, no terminal):
+
+```
+$ typedrill --wordlist empty.txt
+typedrill: empty.txt has no typeable words
+$ typedrill --wordlist missing.txt
+typedrill: cannot read missing.txt: No such file or directory
+$ typedrill --wordlist w.txt --weak
+typedrill: --wordlist cannot be combined with --text or --weak
+```
+
+The word choice from a list is covered by tests with a stand-in runner; an
+actual drill from a custom list was not run in a real terminal.
 
 ## What was and was not tested
 

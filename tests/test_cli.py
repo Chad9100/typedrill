@@ -117,6 +117,41 @@ def test_ctrl_c_counts_as_abort(tmp_path):
     assert history(tmp_path) == []
 
 
+def test_wordlist_file_is_the_word_pool(tmp_path):
+    f = tmp_path / "w.txt"
+    f.write_text("alpha beta\ngamma alpha\n", encoding="utf-8")
+    run = typist()
+    run_cli(["--wordlist", str(f), "--words", "40", "--seed", "2", "--no-save"], tmp_path, run)
+    target = run.seen["session"].target.split()
+    assert len(target) == 40
+    assert set(target) == {"alpha", "beta", "gamma"}
+    assert run.seen["mode"] == "words"
+
+
+def test_wordlist_missing_file(tmp_path, capsys):
+    assert run_cli(["--wordlist", str(tmp_path / "nope.txt")], tmp_path, typist()) == 1
+    assert "cannot read" in capsys.readouterr().err
+
+
+def test_wordlist_empty_file(tmp_path, capsys):
+    f = tmp_path / "e.txt"
+    f.write_text("  \n", encoding="utf-8")
+    assert run_cli(["--wordlist", str(f)], tmp_path, typist()) == 1
+    assert "no typeable words" in capsys.readouterr().err
+
+
+def test_wordlist_rejects_weak(tmp_path, capsys):
+    f = tmp_path / "w.txt"
+    f.write_text("a b", encoding="utf-8")
+    assert run_cli(["--wordlist", str(f), "--weak"], tmp_path, typist()) == 1
+    assert "cannot be combined" in capsys.readouterr().err
+
+
+def test_wordlist_directory_is_an_error(tmp_path, capsys):
+    assert run_cli(["--wordlist", str(tmp_path)], tmp_path, typist()) == 1
+    assert "cannot read" in capsys.readouterr().err
+
+
 def test_text_file_drill(tmp_path):
     f = tmp_path / "t.txt"
     f.write_text("The quick\nbrown fox\n", encoding="utf-8")
