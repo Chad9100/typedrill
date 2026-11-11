@@ -25,6 +25,7 @@ typedrill --weak              # a drill built from your weak keys
 typedrill stats               # history summary
 typedrill weak-keys           # keys ranked by error rate
 typedrill export --csv        # history as CSV on stdout (or -o FILE)
+typedrill export --json       # history as JSON, with per-key counts
 ```
 
 In the drill: type the text shown. Correct characters turn green, mistakes
@@ -95,10 +96,22 @@ ts,mode,seconds,wpm,accuracy,errors,chars
 
 $ typedrill export -o no_such_dir/x.csv
 typedrill: cannot write no_such_dir/x.csv: No such file or directory
+
+$ typedrill export --json   (two tiny demo records typed by a simulated typist)
+[
+  {"accuracy": 100.0, "chars": 3, "errors": 0, "keys": {"a": [1, 0], "c": [1, 0], "t": [1, 0]}, "mode": "words", "seconds": 1.0, "ts": "2026-11-02T18:00:00Z", "wpm": 36.0},
+  {"accuracy": 66.67, "chars": 2, "errors": 1, "keys": {"a": [1, 1], "c": [1, 0], "t": [1, 0]}, "mode": "words", "seconds": 1.0, "ts": "2026-11-03T18:00:00Z", "wpm": 24.0}
+]
+
+$ typedrill export --csv --json
+usage: typedrill export [-h] [--csv | --json] [-o FILE]
+typedrill export: error: argument --json: not allowed with argument --csv
 ```
 
-`export` leaves out the per-key counts and uses LF line endings. The error
-message text after the colon comes from the operating system.
+In the JSON, each key maps to `[attempts, errors]`. `export --csv` leaves out
+the per-key counts. Both use LF line endings.
+
+The error message text after the colon comes from the operating system.
 
 ## What was and was not tested
 

@@ -280,6 +280,34 @@ def test_export_unwritable_output_reports_error(tmp_path, capsys):
     assert "cannot write" in capsys.readouterr().err
 
 
+def test_export_json_includes_keys(tmp_path, capsys):
+    seed_history(tmp_path)
+    capsys.readouterr()
+    assert run_cli(["export", "--json"], tmp_path) == 0
+    data = json.loads(capsys.readouterr().out)
+    assert len(data) == 2
+    assert data[0]["ts"] == "2026-05-06T07:08:09Z"
+    assert data[1]["errors"] == 2
+    assert all(isinstance(v, list) and len(v) == 2 for v in data[0]["keys"].values())
+    assert data == history(tmp_path)
+
+
+def test_export_json_empty_and_file(tmp_path, capsys):
+    assert run_cli(["export", "--json"], tmp_path) == 0
+    assert capsys.readouterr().out == "[]\n"
+    seed_history(tmp_path)
+    capsys.readouterr()
+    out = tmp_path / "out.json"
+    assert run_cli(["export", "--json", "-o", str(out)], tmp_path) == 0
+    assert len(json.loads(out.read_text(encoding="utf-8"))) == 2
+    assert b"\r" not in out.read_bytes()
+
+
+def test_export_csv_and_json_conflict(tmp_path):
+    with pytest.raises(SystemExit):
+        run_cli(["export", "--csv", "--json"], tmp_path)
+
+
 def test_version(capsys):
     with pytest.raises(SystemExit):
         build_parser().parse_args(["--version"])

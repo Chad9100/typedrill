@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 from typing import Any
 
 from typedrill.scoring import Result
@@ -58,6 +59,14 @@ def format_csv(history: list[dict[str, Any]]) -> str:
     for r in history:
         writer.writerow([r.get(c, "") for c in CSV_COLUMNS])
     return out.getvalue()
+
+
+def format_json(history: list[dict[str, Any]]) -> str:
+    """History as a JSON array, per-key counts included, one record per line."""
+    if not history:
+        return "[]\n"
+    rows = ",\n".join("  " + json.dumps(r, sort_keys=True) for r in history)
+    return "[\n" + rows + "\n]\n"
 
 
 def format_weak_keys(stats: list[KeyStat]) -> str:

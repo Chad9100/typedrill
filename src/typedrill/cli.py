@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any, Callable, Mapping
 
 from typedrill import __version__, storage, weak, words
-from typedrill.report import format_csv, format_stats, format_summary, format_weak_keys
+from typedrill.report import format_csv, format_json, format_stats, format_summary, format_weak_keys
 from typedrill.session import DrillSession
 from typedrill.tui import ABORTED
 
@@ -50,8 +50,10 @@ def build_parser() -> argparse.ArgumentParser:
     wk = sub.add_parser("weak-keys", help="show the keys you miss most")
     wk.add_argument("--limit", type=_positive, default=8, help="how many keys to list (default 8)")
     wk.add_argument("--last", type=_positive, help="only look at the last N sessions")
-    ex = sub.add_parser("export", help="write history as CSV")
-    ex.add_argument("--csv", action="store_true", help="CSV format (the default and only format)")
+    ex = sub.add_parser("export", help="write history as CSV or JSON")
+    fmt = ex.add_mutually_exclusive_group()
+    fmt.add_argument("--csv", action="store_true", help="CSV format (the default)")
+    fmt.add_argument("--json", action="store_true", help="JSON format, including per-key counts")
     ex.add_argument("-o", "--output", metavar="FILE", help="write to FILE instead of standard output")
     return p
 
@@ -115,7 +117,8 @@ def main(
         print(format_stats(storage.load_history(hist_path)))
         return 0
     if args.command == "export":
-        text = format_csv(storage.load_history(hist_path))
+        fmt = format_json if args.json else format_csv
+        text = fmt(storage.load_history(hist_path))
         if args.output:
             try:
                 with open(args.output, "w", encoding="utf-8", newline="") as fh:

@@ -18,7 +18,7 @@ Ideas for after v0.1, roughly in order of usefulness.
 8. **Stop-on-error mode** - optional strict mode where a wrong key blocks until
    corrected.
 9. ~~**Export** - `typedrill export --csv` for history.~~ Done.
-11. **JSON export** - `typedrill export --json` including per-key counts.
+11. ~~**JSON export** - `typedrill export --json` including per-key counts.~~ Done.
 12. **Delete history** - `typedrill reset` with confirmation.
 10. **Keyboard layouts** - show which finger/row a weak key belongs to for
     QWERTY, Dvorak and Colemak.
