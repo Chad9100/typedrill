@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import csv
+import io
 from typing import Any
 
 from typedrill.scoring import Result
@@ -42,6 +44,20 @@ def format_stats(history: list[dict[str, Any]], recent: int = 5) -> str:
             f"  {when:<20}  {str(r.get('mode', '?')):<6} {float(r['wpm']):>5.1f} {float(r['accuracy']):>5.1f}%"
         )
     return "\n".join(lines)
+
+
+CSV_COLUMNS = ["ts", "mode", "seconds", "wpm", "accuracy", "errors", "chars"]
+
+
+def format_csv(history: list[dict[str, Any]]) -> str:
+    """History as CSV text (header plus one row per drill, LF line ends).
+    The per-key counts are left out; fields a record lacks are empty."""
+    out = io.StringIO()
+    writer = csv.writer(out, lineterminator="\n")
+    writer.writerow(CSV_COLUMNS)
+    for r in history:
+        writer.writerow([r.get(c, "") for c in CSV_COLUMNS])
+    return out.getvalue()
 
 
 def format_weak_keys(stats: list[KeyStat]) -> str:

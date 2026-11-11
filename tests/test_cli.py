@@ -240,6 +240,46 @@ def test_save_failure_is_reported_not_fatal(tmp_path, capsys):
     assert "could not save" in capsys.readouterr().err
 
 
+def seed_history(tmp_path):
+    run_cli(["--words", "3"], tmp_path, typist())
+    run_cli(["--words", "3"], tmp_path, typist(mistakes=2))
+
+
+def test_export_stdout_csv(tmp_path, capsys):
+    seed_history(tmp_path)
+    capsys.readouterr()
+    assert run_cli(["export", "--csv"], tmp_path) == 0
+    lines = capsys.readouterr().out.splitlines()
+    assert lines[0] == "ts,mode,seconds,wpm,accuracy,errors,chars"
+    assert len(lines) == 3
+    assert lines[1].startswith("2026-05-06T07:08:09Z,words,")
+    assert lines[1].split(",")[5] == "0"
+    assert lines[2].split(",")[5] == "2"
+
+
+def test_export_empty_history_is_header_only(tmp_path, capsys):
+    assert run_cli(["export"], tmp_path) == 0
+    assert capsys.readouterr().out == "ts,mode,seconds,wpm,accuracy,errors,chars\n"
+
+
+def test_export_to_file(tmp_path, capsys):
+    seed_history(tmp_path)
+    capsys.readouterr()
+    out = tmp_path / "out.csv"
+    assert run_cli(["export", "-o", str(out)], tmp_path) == 0
+    assert capsys.readouterr().out == ""
+    assert len(out.read_bytes().splitlines()) == 3
+    assert b"\r" not in out.read_bytes()
+
+
+def test_export_unwritable_output_reports_error(tmp_path, capsys):
+    blocker = tmp_path / "file"
+    blocker.write_text("x")
+    # a path under a regular file: NotADirectoryError on Linux, other OSError on Windows
+    assert run_cli(["export", "-o", str(blocker / "out.csv")], tmp_path) == 1
+    assert "cannot write" in capsys.readouterr().err
+
+
 def test_version(capsys):
     with pytest.raises(SystemExit):
         build_parser().parse_args(["--version"])

@@ -24,6 +24,7 @@ typedrill --text notes.txt    # type your own text (whole file, or --words N of 
 typedrill --weak              # a drill built from your weak keys
 typedrill stats               # history summary
 typedrill weak-keys           # keys ranked by error rate
+typedrill export --csv        # history as CSV on stdout (or -o FILE)
 ```
 
 In the drill: type the text shown. Correct characters turn green, mistakes
@@ -85,7 +86,19 @@ Weak keys (worst first):
   o            2        65        3.1%
 
 Drill them with: typedrill --weak
+
+$ typedrill export --csv   (three demo records, seeded like the above)
+ts,mode,seconds,wpm,accuracy,errors,chars
+2026-11-02T18:00:00Z,words,30.5,45.2,96.5,3,114
+2026-11-03T18:00:00Z,words,30.5,48.2,96.5,2,114
+2026-11-04T18:00:00Z,words,30.5,51.2,96.5,1,114
+
+$ typedrill export -o no_such_dir/x.csv
+typedrill: cannot write no_such_dir/x.csv: No such file or directory
 ```
+
+`export` leaves out the per-key counts and uses LF line endings. The error
+message text after the colon comes from the operating system.
 
 ## What was and was not tested
 
