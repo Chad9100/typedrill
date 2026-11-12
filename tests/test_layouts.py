@@ -49,6 +49,24 @@ def test_format_with_layout():
     assert out[3].endswith("25.0%  -       -")
 
 
+def test_finger_summary_groups_and_sorts():
+    from typedrill.report import format_finger_summary
+    stats = [KeyStat("p", 10, 3), KeyStat("[", 10, 1), KeyStat("a", 20, 2),
+             KeyStat("é", 5, 1)]
+    out = format_finger_summary(stats, "qwerty")
+    assert out[0].startswith("Errors by finger")
+    rows = [line.split() for line in out[2:]]
+    assert rows[0][:2] == ["right", "pinky"] and rows[0][2:5] == ["4", "20", "20.0%"]
+    assert rows[1][:2] == ["left", "pinky"] and rows[1][2] == "2"
+    assert rows[2][0] == "unmapped" and rows[2][1] == "1"
+
+
+def test_summary_only_with_layout():
+    stats = [KeyStat("p", 10, 3)]
+    assert "Errors by finger" in format_weak_keys(stats, "qwerty")
+    assert "Errors by finger" not in format_weak_keys(stats)
+
+
 def test_format_without_layout_unchanged():
     out = format_weak_keys([KeyStat("p", 10, 3)])
     assert "finger" not in out and "layout" not in out

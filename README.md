@@ -45,6 +45,9 @@ what `weak-keys` aggregates (keys tried fewer than 5 times are ignored).
 `--layout` maps each recorded character to a row and finger using standard
 touch-typing columns on an ANSI-style keyboard; it is a lookup table, not
 something detected from your hardware, and shifted symbols are not mapped.
+With `--layout` an "Errors by finger" table follows, totalling errors and
+attempts over the keys listed (so `--limit` affects it); keys not on the main
+block are grouped as "unmapped".
 
 History is a JSON file, `history.json`, in `~/.typedrill`, or in the directory
 named by the `TYPEDRILL_HOME` environment variable. If the file is ever
@@ -111,6 +114,11 @@ Weak keys (worst first):  [dvorak layout]
   p            2         7       28.6%  top     left index
   h            5        43       11.6%  home    right index
   k            1        10       10.0%  bottom  left index
+
+Errors by finger (keys listed above):
+  finger        errors  attempts  error rate
+  right index        5        43       11.6%
+  left index         3        17       17.6%
 
 Drill them with: typedrill --weak
 

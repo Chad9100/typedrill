@@ -24,4 +24,7 @@ Ideas for after v0.1, roughly in order of usefulness.
 10. ~~**Keyboard layouts** - show which finger/row a weak key belongs to for
     QWERTY, Dvorak and Colemak.~~ Done (`weak-keys --layout`).
 13. **Layout-aware drills** - build `--weak` drills from a whole finger or row.
-14. **Per-finger summary** - total errors grouped by finger in `weak-keys`.
+14. ~~**Per-finger summary** - total errors grouped by finger in `weak-keys`.~~
+    Done (shown with `--layout`, over the keys listed).
+15. **Per-hand summary** - left/right hand totals and a balance figure.
+16. **Weak-keys JSON output** - `weak-keys --json` for scripting.

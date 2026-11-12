@@ -105,6 +105,23 @@ def format_json(history: list[dict[str, Any]]) -> str:
     return "[\n" + rows + "\n]\n"
 
 
+def format_finger_summary(stats: list[KeyStat], layout: str) -> list[str]:
+    """Errors and attempts grouped by finger, most errors first, for the
+    keys in ``stats`` (keys not on the main block go under "unmapped")."""
+    totals: dict[str, list[int]] = {}
+    for s in stats:
+        found = locate(layout, s.key)
+        finger = found[1] if found else "unmapped"
+        t = totals.setdefault(finger, [0, 0])
+        t[0] += s.errors
+        t[1] += s.attempts
+    lines = ["Errors by finger (keys listed above):", "  finger        errors  attempts  error rate"]
+    for finger, (errors, attempts) in sorted(totals.items(), key=lambda kv: (-kv[1][0], kv[0])):
+        rate = 100.0 * errors / attempts if attempts else 0.0
+        lines.append(f"  {finger:<12}  {errors:>6}  {attempts:>8}  {rate:>9.1f}%")
+    return lines
+
+
 def format_weak_keys(stats: list[KeyStat], layout: str | None = None) -> str:
     if not stats:
         return "No weak keys yet: nothing with errors and enough attempts in your history."
@@ -119,6 +136,9 @@ def format_weak_keys(stats: list[KeyStat], layout: str | None = None) -> str:
             row, finger = found if found else ("-", "-")
             line += f"  {row:<6}  {finger}"
         lines.append(line)
+    if layout:
+        lines.append("")
+        lines.extend(format_finger_summary(stats, layout))
     lines.append("")
     lines.append("Drill them with: typedrill --weak")
     return "\n".join(lines)
