@@ -7,6 +7,7 @@ import io
 import json
 from typing import Any
 
+from typedrill.layouts import locate
 from typedrill.scoring import Result
 from typedrill.weak import KeyStat
 
@@ -104,14 +105,20 @@ def format_json(history: list[dict[str, Any]]) -> str:
     return "[\n" + rows + "\n]\n"
 
 
-def format_weak_keys(stats: list[KeyStat]) -> str:
+def format_weak_keys(stats: list[KeyStat], layout: str | None = None) -> str:
     if not stats:
         return "No weak keys yet: nothing with errors and enough attempts in your history."
-    lines = ["Weak keys (worst first):", "  key     errors  attempts  error rate"]
+    head = "  key     errors  attempts  error rate"
+    if layout:
+        head += "  row     finger"
+    lines = ["Weak keys (worst first):" + (f"  [{layout} layout]" if layout else ""), head]
     for s in stats:
-        lines.append(
-            f"  {key_label(s.key):<6}  {s.errors:>6}  {s.attempts:>8}  {s.error_rate:>9.1f}%"
-        )
+        line = f"  {key_label(s.key):<6}  {s.errors:>6}  {s.attempts:>8}  {s.error_rate:>9.1f}%"
+        if layout:
+            found = locate(layout, s.key)
+            row, finger = found if found else ("-", "-")
+            line += f"  {row:<6}  {finger}"
+        lines.append(line)
     lines.append("")
     lines.append("Drill them with: typedrill --weak")
     return "\n".join(lines)

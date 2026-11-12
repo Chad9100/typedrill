@@ -26,6 +26,7 @@ typedrill --weak              # a drill built from your weak keys
 typedrill stats               # history summary
 typedrill stats --chart       # WPM and accuracy trend as text sparklines
 typedrill weak-keys           # keys ranked by error rate
+typedrill weak-keys --layout dvorak   # plus row and finger (qwerty, dvorak, colemak)
 typedrill export --csv        # history as CSV on stdout (or -o FILE)
 typedrill export --json       # history as JSON, with per-key counts
 typedrill reset               # delete all history, after confirmation (-y skips it)
@@ -40,6 +41,10 @@ Only finished drills are saved; use `--no-save` to skip saving.
 Scoring: WPM = correct characters / 5 / minutes. Accuracy = correct keystrokes
 / all keystrokes. Errors are charged to the key you *should* have hit, which is
 what `weak-keys` aggregates (keys tried fewer than 5 times are ignored).
+
+`--layout` maps each recorded character to a row and finger using standard
+touch-typing columns on an ANSI-style keyboard; it is a lookup table, not
+something detected from your hardware, and shifted symbols are not mapped.
 
 History is a JSON file, `history.json`, in `~/.typedrill`, or in the directory
 named by the `TYPEDRILL_HOME` environment variable. If the file is ever
@@ -97,6 +102,15 @@ Weak keys (worst first):
   t            3        77        3.9%
   w            1        27        3.7%
   o            2        65        3.1%
+
+Drill them with: typedrill --weak
+
+$ typedrill weak-keys --layout dvorak --limit 3   (a separate one-session demo history)
+Weak keys (worst first):  [dvorak layout]
+  key     errors  attempts  error rate  row     finger
+  p            2         7       28.6%  top     left index
+  h            5        43       11.6%  home    right index
+  k            1        10       10.0%  bottom  left index
 
 Drill them with: typedrill --weak
 

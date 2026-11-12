@@ -21,5 +21,7 @@ Ideas for after v0.1, roughly in order of usefulness.
 9. ~~**Export** - `typedrill export --csv` for history.~~ Done.
 11. ~~**JSON export** - `typedrill export --json` including per-key counts.~~ Done.
 12. ~~**Delete history** - `typedrill reset` with confirmation.~~ Done.
-10. **Keyboard layouts** - show which finger/row a weak key belongs to for
-    QWERTY, Dvorak and Colemak.
+10. ~~**Keyboard layouts** - show which finger/row a weak key belongs to for
+    QWERTY, Dvorak and Colemak.~~ Done (`weak-keys --layout`).
+13. **Layout-aware drills** - build `--weak` drills from a whole finger or row.
+14. **Per-finger summary** - total errors grouped by finger in `weak-keys`.
