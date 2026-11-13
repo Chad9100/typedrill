@@ -48,7 +48,9 @@ touch-typing columns on an ANSI-style keyboard; it is a lookup table, not
 something detected from your hardware, and shifted symbols are not mapped.
 With `--layout` an "Errors by finger" table follows, totalling errors and
 attempts over the keys listed (so `--limit` affects it); keys not on the main
-block are grouped as "unmapped".
+block are grouped as "unmapped". An "Errors by hand" table follows it, with
+left and right totals (plus thumb and unmapped rows when present) and a
+balance line giving the share of left/right errors on each hand.
 
 History is a JSON file, `history.json`, in `~/.typedrill`, or in the directory
 named by the `TYPEDRILL_HOME` environment variable. If the file is ever
@@ -120,6 +122,12 @@ Errors by finger (keys listed above):
   finger        errors  attempts  error rate
   right index        5        43       11.6%
   left index         3        17       17.6%
+
+Errors by hand (keys listed above):
+  hand      errors  attempts  error rate
+  left           3        17       17.6%
+  right          5        43       11.6%
+Balance: 37.5% of errors on the left hand, 62.5% on the right
 
 Drill them with: typedrill --weak
 

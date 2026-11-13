@@ -122,6 +122,37 @@ def format_finger_summary(stats: list[KeyStat], layout: str) -> list[str]:
     return lines
 
 
+def format_hand_summary(stats: list[KeyStat], layout: str) -> list[str]:
+    """Errors and attempts per hand (left, right, plus thumb/unmapped when
+    present) and a left/right balance figure, for the keys in ``stats``."""
+    totals: dict[str, list[int]] = {"left": [0, 0], "right": [0, 0]}
+    for s in stats:
+        found = locate(layout, s.key)
+        if found is None:
+            hand = "unmapped"
+        elif found[1] == "thumb":
+            hand = "thumb"
+        else:
+            hand = found[1].split()[0]
+        t = totals.setdefault(hand, [0, 0])
+        t[0] += s.errors
+        t[1] += s.attempts
+    lines = ["Errors by hand (keys listed above):", "  hand      errors  attempts  error rate"]
+    for hand in ("left", "right", "thumb", "unmapped"):
+        if hand not in totals:
+            continue
+        errors, attempts = totals[hand]
+        rate = 100.0 * errors / attempts if attempts else 0.0
+        lines.append(f"  {hand:<8}  {errors:>6}  {attempts:>8}  {rate:>9.1f}%")
+    left, right = totals["left"][0], totals["right"][0]
+    if left + right:
+        lines.append(f"Balance: {100.0 * left / (left + right):.1f}% of errors on the left hand, "
+                     f"{100.0 * right / (left + right):.1f}% on the right")
+    else:
+        lines.append("Balance: no errors on either hand")
+    return lines
+
+
 def format_weak_keys_json(stats: list[KeyStat], layout: str | None = None) -> str:
     """Weak keys as a JSON array, worst first, one object per line. With a
     layout each object also has "row" and "finger" (null if not on the main block)."""
@@ -157,6 +188,8 @@ def format_weak_keys(stats: list[KeyStat], layout: str | None = None) -> str:
     if layout:
         lines.append("")
         lines.extend(format_finger_summary(stats, layout))
+        lines.append("")
+        lines.extend(format_hand_summary(stats, layout))
     lines.append("")
     lines.append("Drill them with: typedrill --weak")
     return "\n".join(lines)

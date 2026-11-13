@@ -26,5 +26,6 @@ Ideas for after v0.1, roughly in order of usefulness.
 13. **Layout-aware drills** - build `--weak` drills from a whole finger or row.
 14. ~~**Per-finger summary** - total errors grouped by finger in `weak-keys`.~~
     Done (shown with `--layout`, over the keys listed).
-15. **Per-hand summary** - left/right hand totals and a balance figure.
+15. ~~**Per-hand summary** - left/right hand totals and a balance figure.~~
+    Done (shown with `--layout`, after the finger table).
 16. ~~**Weak-keys JSON output** - `weak-keys --json` for scripting.~~ Done.

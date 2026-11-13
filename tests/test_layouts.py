@@ -83,6 +83,31 @@ def test_cli_layout(tmp_path, capsys):
     assert "top     left index" in out  # p
 
 
+def test_hand_summary_totals_and_balance():
+    from typedrill.report import format_hand_summary
+
+    stats = [KeyStat("a", 10, 3), KeyStat("j", 10, 1), KeyStat(" ", 5, 1), KeyStat("~", 4, 2)]
+    out = "\n".join(format_hand_summary(stats, "qwerty"))
+    rows = [line.split() for line in out.splitlines()]
+    assert ["left", "3", "10", "30.0%"] in rows
+    assert ["right", "1", "10", "10.0%"] in rows
+    assert "thumb" in out and "unmapped" in out
+    assert "Balance: 75.0% of errors on the left hand, 25.0% on the right" in out
+
+
+def test_hand_summary_no_hand_errors():
+    from typedrill.report import format_hand_summary
+
+    out = format_hand_summary([KeyStat("~", 5, 2)], "qwerty")
+    assert out[-1] == "Balance: no errors on either hand"
+
+
+def test_weak_keys_layout_shows_hand_table_only_with_layout():
+    stats = [KeyStat("a", 10, 3)]
+    assert "Errors by hand" in format_weak_keys(stats, "dvorak")
+    assert "Errors by hand" not in format_weak_keys(stats)
+
+
 def test_cli_bad_layout(tmp_path, capsys):
     with pytest.raises(SystemExit):
         main(["weak-keys", "--layout", "azerty"], env={"TYPEDRILL_HOME": str(tmp_path)})
