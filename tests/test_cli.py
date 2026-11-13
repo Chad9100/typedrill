@@ -235,6 +235,33 @@ def test_weak_keys_limit_and_last(tmp_path, capsys):
     assert " a " in out and " b " not in out and " z " not in out
 
 
+WEAK_REC = {"wpm": 1, "accuracy": 1, "keys": {"q": [10, 9], "e": [50, 1], "~": [6, 3], "x": [2, 2]}}
+
+
+def test_weak_keys_json(tmp_path, capsys):
+    storage.save_history([WEAK_REC], tmp_path / "history.json")
+    assert run_cli(["weak-keys", "--json"], tmp_path) == 0
+    out = capsys.readouterr().out
+    data = json.loads(out)
+    assert [d["key"] for d in data] == ["q", "~", "e"]  # x has too few attempts
+    assert data[0] == {"key": "q", "attempts": 10, "errors": 9, "error_rate": 90.0}
+    assert out.endswith("]\n") and "\r" not in out
+
+
+def test_weak_keys_json_empty(tmp_path, capsys):
+    assert run_cli(["weak-keys", "--json"], tmp_path) == 0
+    assert capsys.readouterr().out == "[]\n"
+
+
+def test_weak_keys_json_layout_and_limit(tmp_path, capsys):
+    storage.save_history([WEAK_REC], tmp_path / "history.json")
+    run_cli(["weak-keys", "--json", "--layout", "qwerty", "--limit", "2"], tmp_path)
+    data = json.loads(capsys.readouterr().out)
+    assert len(data) == 2
+    assert data[0]["row"] == "top" and data[0]["finger"] == "left pinky"
+    assert data[1]["key"] == "~" and data[1]["row"] is None and data[1]["finger"] is None
+
+
 def test_weak_drill_uses_history(tmp_path):
     rec = {"wpm": 1, "accuracy": 1, "keys": {"z": [10, 5]}}
     (tmp_path / "history.json").write_text(json.dumps([rec]), encoding="utf-8")

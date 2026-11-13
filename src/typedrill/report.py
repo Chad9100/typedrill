@@ -122,6 +122,24 @@ def format_finger_summary(stats: list[KeyStat], layout: str) -> list[str]:
     return lines
 
 
+def format_weak_keys_json(stats: list[KeyStat], layout: str | None = None) -> str:
+    """Weak keys as a JSON array, worst first, one object per line. With a
+    layout each object also has "row" and "finger" (null if not on the main block)."""
+    if not stats:
+        return "[]\n"
+    rows = []
+    for s in stats:
+        obj: dict[str, Any] = {
+            "key": s.key, "attempts": s.attempts, "errors": s.errors,
+            "error_rate": round(s.error_rate, 2),
+        }
+        if layout:
+            found = locate(layout, s.key)
+            obj["row"], obj["finger"] = found if found else (None, None)
+        rows.append("  " + json.dumps(obj, sort_keys=True))
+    return "[\n" + ",\n".join(rows) + "\n]\n"
+
+
 def format_weak_keys(stats: list[KeyStat], layout: str | None = None) -> str:
     if not stats:
         return "No weak keys yet: nothing with errors and enough attempts in your history."

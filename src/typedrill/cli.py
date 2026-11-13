@@ -11,7 +11,10 @@ from typing import Any, Callable, Mapping
 
 from typedrill import __version__, storage, weak, words
 from typedrill.layouts import LAYOUTS
-from typedrill.report import format_chart, format_csv, format_json, format_stats, format_summary, format_weak_keys
+from typedrill.report import (
+    format_chart, format_csv, format_json, format_stats, format_summary, format_weak_keys,
+    format_weak_keys_json,
+)
 from typedrill.session import DrillSession
 from typedrill.tui import ABORTED
 
@@ -56,6 +59,7 @@ def build_parser() -> argparse.ArgumentParser:
     wk.add_argument("--last", type=_positive, help="only look at the last N sessions")
     wk.add_argument("--layout", choices=sorted(LAYOUTS),
                     help="also show each key's row and finger on this keyboard layout")
+    wk.add_argument("--json", action="store_true", help="print the keys as JSON for scripts")
     ex = sub.add_parser("export", help="write history as CSV or JSON")
     fmt = ex.add_mutually_exclusive_group()
     fmt.add_argument("--csv", action="store_true", help="CSV format (the default)")
@@ -175,7 +179,11 @@ def main(
         return 0
     if args.command == "weak-keys":
         history = storage.load_history(hist_path)
-        print(format_weak_keys(weak.weak_keys(history, args.limit, last=args.last), args.layout))
+        stats = weak.weak_keys(history, args.limit, last=args.last)
+        if args.json:
+            sys.stdout.write(format_weak_keys_json(stats, args.layout))
+        else:
+            print(format_weak_keys(stats, args.layout))
         return 0
 
     rng = random.Random(args.seed)

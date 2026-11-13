@@ -27,6 +27,7 @@ typedrill stats               # history summary
 typedrill stats --chart       # WPM and accuracy trend as text sparklines
 typedrill weak-keys           # keys ranked by error rate
 typedrill weak-keys --layout dvorak   # plus row and finger (qwerty, dvorak, colemak)
+typedrill weak-keys --json    # the same ranking as JSON, for scripts
 typedrill export --csv        # history as CSV on stdout (or -o FILE)
 typedrill export --json       # history as JSON, with per-key counts
 typedrill reset               # delete all history, after confirmation (-y skips it)
@@ -122,6 +123,19 @@ Errors by finger (keys listed above):
 
 Drill them with: typedrill --weak
 
+$ typedrill weak-keys --json --limit 3   (same demo history as weak-keys above, one session)
+[
+  {"attempts": 7, "error_rate": 28.57, "errors": 2, "key": "p"},
+  {"attempts": 43, "error_rate": 11.63, "errors": 5, "key": "h"},
+  {"attempts": 10, "error_rate": 10.0, "errors": 1, "key": "k"}
+]
+
+$ typedrill weak-keys --json --layout dvorak --limit 2
+[
+  {"attempts": 7, "error_rate": 28.57, "errors": 2, "finger": "left index", "key": "p", "row": "top"},
+  {"attempts": 43, "error_rate": 11.63, "errors": 5, "finger": "right index", "key": "h", "row": "home"}
+]
+
 $ typedrill export --csv   (three demo records, seeded like the above)
 ts,mode,seconds,wpm,accuracy,errors,chars
 2026-11-02T18:00:00Z,words,30.5,45.2,96.5,3,114
@@ -144,6 +158,11 @@ typedrill export: error: argument --json: not allowed with argument --csv
 
 In the JSON, each key maps to `[attempts, errors]`. `export --csv` leaves out
 the per-key counts. Both use LF line endings.
+
+`weak-keys --json` prints `[]` when there are no weak keys. With `--layout`,
+each object also has `row` and `finger` (`null` for keys not on the main
+block). The `--json` demos above were run on a one-session history written by
+hand for the purpose, not on a human's typing.
 
 The error message text after the colon comes from the operating system.
 

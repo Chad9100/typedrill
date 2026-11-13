@@ -27,4 +27,4 @@ Ideas for after v0.1, roughly in order of usefulness.
 14. ~~**Per-finger summary** - total errors grouped by finger in `weak-keys`.~~
     Done (shown with `--layout`, over the keys listed).
 15. **Per-hand summary** - left/right hand totals and a balance figure.
-16. **Weak-keys JSON output** - `weak-keys --json` for scripting.
+16. ~~**Weak-keys JSON output** - `weak-keys --json` for scripting.~~ Done.
